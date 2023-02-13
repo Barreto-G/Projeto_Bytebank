@@ -9,9 +9,10 @@ using Projeto_Bytebank.Pessoas;
 
 namespace Projeto_Bytebank
 {
-    public class ProgramaPrincipal
+    public partial class ProgramaPrincipal //: IDisposable
     {
         public static List<ContaCorrente> _ListaDeContas = new List<ContaCorrente>();
+        //public static FileStream FluxoDoArquivo = new FileStream("contas.csv", FileMode.OpenOrCreate, FileAccess.ReadWrite,FileShare.ReadWrite);
         public void Exec()
         {
             try
@@ -20,7 +21,7 @@ namespace Projeto_Bytebank
                 do
                 {
                     Console.Clear();
-                    Console.WriteLine(  $"======= Boas Vindas ao ByteBank ========\n" +
+                    Console.WriteLine($"======= Boas Vindas ao ByteBank ========\n" +
                                         $"== Digite o numero da opcao desejada: ==\n" +
                                         $"== 1. Cadastrar Conta ==================\n" +
                                         $"== 2. Listar Contas ====================\n" +
@@ -47,7 +48,7 @@ namespace Projeto_Bytebank
                         Console.ReadLine();
                     }
 
-                } while (opcao != '8');
+                } while (opcao != '8');             
             }
             catch (OpcaoInvalidaException ex)
             {
@@ -59,7 +60,7 @@ namespace Projeto_Bytebank
                 Console.WriteLine("Excessao desconhecida");
                 Console.WriteLine(excessao.Message);
                 Console.ReadLine();
-            }
+            } 
         }
 
         private void OpcaoSelecionada(char opcao)
@@ -75,7 +76,7 @@ namespace Projeto_Bytebank
                 case '3':
                     this.RemoverConta();
                     break;
-                case '4':
+               /* case '4':
                     this.Saque();
                     break;
                 case '5':
@@ -86,7 +87,7 @@ namespace Projeto_Bytebank
                     break;
                 case '7':
                     this.Ordenar();
-                    break;
+                    break;*/
                 default:
                     Console.WriteLine("Digite uma opcao valida!");
                     Console.ReadLine();
@@ -95,7 +96,7 @@ namespace Projeto_Bytebank
             }
         }
 
-        private int ProcurarConta()
+        private ContaCorrente ProcurarConta()
         {
             string num_conta;
             do
@@ -106,14 +107,8 @@ namespace Projeto_Bytebank
 
             } while (!Regex.IsMatch(num_conta, @"[0-9]{3}[-][A-Z]{1}"));
 
-            for (int i = 0; i < _ListaDeContas.Count; i++)
-            {
-                if (num_conta == _ListaDeContas[i].Conta)
-                {
-                    return i;
-                }
-            }
-            return -1;
+            ContaCorrente auxiliar = ProcurarEmArquivo(num_conta);
+            return auxiliar;
         }
 
         private void CadastrarConta()
@@ -133,8 +128,9 @@ namespace Projeto_Bytebank
                 Console.Write("Digite o numero da conta: ");
                 string num_conta = Console.ReadLine();
                 ContaCorrente conta_auxiliar = new ContaCorrente(auxiliar, agencia, num_conta);
-                _ListaDeContas.Add(conta_auxiliar);
-
+                SalvarEmArquivo(conta_auxiliar);
+                Console.WriteLine("Conta Adicionada com Sucesso!");
+                Console.ReadLine();
             }
             catch (ArgumentException ex)
             {
@@ -142,49 +138,66 @@ namespace Projeto_Bytebank
                 Console.WriteLine(ex.Message);
                 Console.ReadLine();
             }
-            Console.WriteLine("Conta Adicionada com Sucesso!");
-            Console.ReadLine();
+
         }
 
         private void ListarContas()
         {
-            if (_ListaDeContas == null || _ListaDeContas.Count == 0)
+            using (FileStream FluxoDoArquivo = new FileStream("contas.csv", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
             {
-                Console.WriteLine("Ainda nao ha nenhuma conta cadastrada");
-                Console.ReadLine();
-            }
-            else
-            {
-                foreach (var lista in _ListaDeContas)
+                if (FluxoDoArquivo.Length == 0)
                 {
-                    Console.WriteLine(lista.ToString() + "\n");
+                    Console.WriteLine("Ainda nao ha nenhuma conta cadastrada");
                     Console.ReadLine();
                 }
-                Console.WriteLine("----------------");
-                Console.ReadLine();
+                else
+                {
+                    using (StreamReader leitor = new StreamReader(FluxoDoArquivo))
+                    {
+                        FluxoDoArquivo.Position = 0;
+                        while (!leitor.EndOfStream)
+                        {
+                            string linha = leitor.ReadLine();
+                            if (linha == null)
+                            {
+                                break;
+                            }
+                            ContaCorrente auxiliar = TransformaEmContaCorrente(linha);
+                            Console.WriteLine(auxiliar.ToString());
+                            Console.WriteLine("----------------");
+                            Console.ReadLine();
+                        }
+                    }
+                }
             }
-
+                
         }
 
         private void RemoverConta()
         {
-            int auxiliar = this.ProcurarConta();
-            if (auxiliar != -1)
+            string num_conta;
+            do
             {
-                _ListaDeContas.RemoveAt(auxiliar);
-                Console.WriteLine("Conta Excluida com sucesso");
-                Console.ReadLine();
+                Console.Write("Digite um numero de conta valido: ");
+                num_conta = Console.ReadLine();
                 Console.Clear();
+
+            } while (!Regex.IsMatch(num_conta, @"[0-9]{3}[-][A-Z]{1}"));
+
+            if (overwrite(num_conta))
+            {
+                Console.WriteLine("Conta Excluida com sucesso");
             }
             else
             {
-                Console.WriteLine("Conta nao encontrada!");
-                Console.ReadLine();
-                Console.Clear();
+                Console.WriteLine("Conta nao encontrada");
             }
+            
+            Console.ReadLine();
+            Console.Clear();
         }
 
-        private void Saque()
+        /*private void Saque()
         {
             int num_conta = this.ProcurarConta();
             if (num_conta != -1)
@@ -211,20 +224,21 @@ namespace Projeto_Bytebank
                 }
 
             }
-        }
+        }*/
 
-        private void Deposito()
+        /*private void Deposito()
         {
-            int num_conta = this.ProcurarConta();
-            if (num_conta != -1)
+            ContaCorrente conta = this.ProcurarConta();
+            if (conta != null)
             {
                 try
                 {
                     Console.Write("Digite o valor que quer Depositar: ");
                     double valor = double.Parse(Console.ReadLine());
-                    _ListaDeContas[num_conta].Deposito(valor);
+                    conta.Deposito(valor);
                     Console.WriteLine($"Valor de {valor} reais depositado com sucesso\n" +
-                                      $"O novo Saldo da conta eh {_ListaDeContas[num_conta].Saldo}");
+                                      $"O novo Saldo da conta eh {conta.Saldo}");
+
                     Console.ReadLine();
                 }
                 catch (ValorInvalidoException ex)
@@ -239,9 +253,9 @@ namespace Projeto_Bytebank
                 }
             }
 
-        }
+        }*/
 
-        private void Transferencia()
+       /* private void Transferencia()
         {
             try
             {
@@ -268,9 +282,9 @@ namespace Projeto_Bytebank
             }
 
 
-        }
+        }*/
 
-        private void Ordenar()
+        /*private void Ordenar()
         {
             try
             {
@@ -282,11 +296,12 @@ namespace Projeto_Bytebank
             {
                 Console.WriteLine(ex.Message);
             }
-        }
+        }*/
 
-
-
-
+        /*public void Dispose()
+        {
+            FluxoDoArquivo.Dispose();
+        }*/
     }
 }
 
