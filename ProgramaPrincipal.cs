@@ -29,14 +29,13 @@ namespace Projeto_Bytebank
                                         $"== 4. Saque ============================\n" +
                                         $"== 5. Deposito =========================\n" +
                                         $"== 6. Tranferencia =====================\n" +
-                                        $"== 7. Ordenar Contas ===================\n" +
-                                        $"== 8. Sair do Sistema ==================\n");
+                                        $"== 7. Sair do Sistema ==================\n");
                     opcao = Console.ReadLine()[0];
-                    if (opcao < '1' || opcao > '8')
+                    if (opcao < '1' || opcao > '7')
                     {
                         throw new OpcaoInvalidaException("A opcao eh invalida e o programa encerrara");
                     }
-                    else if (opcao != '8')
+                    else if (opcao != '7')
                     {
                         Console.Clear();
                         OpcaoSelecionada(opcao);
@@ -48,7 +47,7 @@ namespace Projeto_Bytebank
                         Console.ReadLine();
                     }
 
-                } while (opcao != '8');             
+                } while (opcao != '7');             
             }
             catch (OpcaoInvalidaException ex)
             {
@@ -76,7 +75,7 @@ namespace Projeto_Bytebank
                 case '3':
                     this.RemoverConta();
                     break;
-               /* case '4':
+                case '4':
                     this.Saque();
                     break;
                 case '5':
@@ -85,9 +84,6 @@ namespace Projeto_Bytebank
                 case '6':
                     this.Transferencia();
                     break;
-                case '7':
-                    this.Ordenar();
-                    break;*/
                 default:
                     Console.WriteLine("Digite uma opcao valida!");
                     Console.ReadLine();
@@ -184,7 +180,7 @@ namespace Projeto_Bytebank
 
             } while (!Regex.IsMatch(num_conta, @"[0-9]{3}[-][A-Z]{1}"));
 
-            if (overwrite(num_conta))
+            if (RemoveFromFile(num_conta))
             {
                 Console.WriteLine("Conta Excluida com sucesso");
             }
@@ -197,36 +193,34 @@ namespace Projeto_Bytebank
             Console.Clear();
         }
 
-        /*private void Saque()
+        private void Saque()
         {
-            int num_conta = this.ProcurarConta();
-            if (num_conta != -1)
+            ContaCorrente conta = this.ProcurarConta();
+            try
             {
-                try
-                {
-                    Console.Write("Digite o valor que quer sacar: ");
-                    double valor = double.Parse(Console.ReadLine());
-                    _ListaDeContas[num_conta].Sacar(valor);
-                    Console.WriteLine($"Valor de {valor} reais sacado com sucesso\n" +
-                                      $"O novo Saldo da conta eh {_ListaDeContas[num_conta].Saldo}");
-                    Console.ReadLine();
-                    Console.Clear();
-                }
-                catch (ValorInvalidoException ex)
-                {
-                    Console.WriteLine(ex.Message);
-                    Console.ReadLine();
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                    Console.ReadLine(); 
-                }
-
+                Console.Write("Digite o valor que quer sacar: ");
+                double valor = double.Parse(Console.ReadLine());
+                conta.Sacar(valor);
+                AlterarArquivo(TransformaEmDados(conta));
+                Console.WriteLine($"Valor de {valor} reais sacado com sucesso\n" +
+                                    $"O novo Saldo da conta eh {conta.Saldo}");
+                Console.ReadLine();
+                Console.Clear();
             }
-        }*/
+            catch (ValorInvalidoException ex)
+            {
+                Console.WriteLine(ex.Message);
+                Console.ReadLine();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                Console.ReadLine(); 
+            }
 
-        /*private void Deposito()
+        }
+
+        private void Deposito()
         {
             ContaCorrente conta = this.ProcurarConta();
             if (conta != null)
@@ -236,6 +230,7 @@ namespace Projeto_Bytebank
                     Console.Write("Digite o valor que quer Depositar: ");
                     double valor = double.Parse(Console.ReadLine());
                     conta.Deposito(valor);
+                    AlterarArquivo(TransformaEmDados(conta));
                     Console.WriteLine($"Valor de {valor} reais depositado com sucesso\n" +
                                       $"O novo Saldo da conta eh {conta.Saldo}");
 
@@ -253,19 +248,21 @@ namespace Projeto_Bytebank
                 }
             }
 
-        }*/
+        }
 
-       /* private void Transferencia()
+        private void Transferencia()
         {
             try
             {
                 Console.WriteLine("Digite o numero da conta que enviara o dinheiro:");
-                int numContaEnvia = this.ProcurarConta();
+                ContaCorrente ContaEnvia = this.ProcurarConta();
                 Console.Write("Digite o valor a ser enviado: ");
                 double valorEnviado = double.Parse(Console.ReadLine());
                 Console.WriteLine("Agora a conta a quem sera enviado: ");
-                int numContaRecebe = this.ProcurarConta();
-                _ListaDeContas[numContaEnvia].Transferir(_ListaDeContas[numContaRecebe], valorEnviado);
+                ContaCorrente ContaRecebe = this.ProcurarConta();
+                ContaEnvia.Transferir(ContaRecebe, valorEnviado);
+                AlterarArquivo(TransformaEmDados(ContaEnvia));
+                AlterarArquivo(TransformaEmDados(ContaRecebe));
                 Console.WriteLine("Transferencia realizada com sucesso!");
                 Console.ReadLine();
 
@@ -282,26 +279,8 @@ namespace Projeto_Bytebank
             }
 
 
-        }*/
+        }
 
-        /*private void Ordenar()
-        {
-            try
-            {
-                _ListaDeContas.Sort();
-                Console.WriteLine("Contas Ordenadas com Sucesso");
-                Console.ReadLine();
-            }
-            catch(Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
-        }*/
-
-        /*public void Dispose()
-        {
-            FluxoDoArquivo.Dispose();
-        }*/
     }
 }
 

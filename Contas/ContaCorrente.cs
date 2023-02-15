@@ -91,7 +91,7 @@ namespace Projeto_Bytebank.Contas
 
         public void Deposito(double valor)
         {
-            if (valor > 0)
+            if (valor >= 0)
             {
                 this.Saldo += valor;
             }
